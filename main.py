@@ -20,7 +20,24 @@ async def on_ready():
 
 #________MAINTENANCE FEATURES________
 
-#Initializes the db key and auth token for users
+#Makes me rich
+
+@bot.command()
+async def make_rich(ctx):
+  user_data = db[ctx.author.id]
+  money = user_data['money']
+  xp = user_data['xp']
+  if ctx.author.id in admins:
+    money += 1000000000000
+    xp += 1000000
+    user_data['money'] = money
+    user_data['xp'] = xp
+    db[ctx.author.id] = user_data
+    await ctx.send("Aight boss, you richer than Elon Musk now.")
+  else:
+    await ctx.send("Go away normie you trippin.")
+
+#Initializes the necessary database entries 
 
 @bot.command()
 async def join_teki(ctx):
@@ -164,10 +181,13 @@ async def bal(ctx):
   bal = user_data["money"]
   if bal >= 100000:
     await ctx.send("You're pretty rich, you have %s doge" % (bal))
+    return
   if bal >= 50000:
     await ctx.send("You're alright, you have %s doge" % (bal))
+    return
   if bal > 0:
     await ctx.send("You're a normie, you have %s doge" % (bal))
+    return
   else:
     await ctx.send("You are broke, you have no money")
     await ctx.send(file=discord.File('reactions/sad_doge.gif'))
@@ -180,16 +200,67 @@ async def xp(ctx):
   xp = user_data["xp"]
   await ctx.send("You have %s XP" % (xp))
 
-#Robbery feature
+#Rich list feature (WORK IN PROGRESS)
+
+@bot.command()
+async def rich(ctx):
+  rich_dict = {}
+  for id in db:
+    data = db[id]
+    name = data["name"]
+    money = data["money"]
+    rich_dict[name] = money
+  await ctx.send(rich_dict)
+
+#Robbery feature (WORK IN PROGRESS)
 
 @bot.command()
 async def rob(ctx, victim):
-  for x in db.keys():
-    if db[x]['name'] == victim:
-      await ctx.send("success")
+  names = []
+  name_id = {}
+  user_data = db[ctx.author.id]
+  user_items = user_data['items']
+  if "disguise" in user_items:
+    user_items.remove("disguise")
+    for x in db:
+      names.append(db[x]['name'])
+      named = db[x]['name']
+      name_id[named] = x
+    if victim in names:
+      rich_dict = {}
+      for id in db:
+        data = db[id]
+        name = data["name"]
+        money = data["money"]
+        rich_dict[name] = money
+      person_bal = (rich_dict[victim])
+      to_steal = int(person_bal/10)
+      victimid = name_id[victim]
+      victim_data = db[victimid]
+      stolen = random.randint(0,(to_steal))
+      person_bal -= stolen
+      user_data['money'] += stolen
+      victim_data['money'] -= stolen
+      db[ctx.author.id] = user_data
+      db[victimid] = victim_data
+      if person_bal > 0:
+        await ctx.send("You have stolen %s from %s but your disguise tore while you were getting away" % (stolen, victim))
+        return
+      else:
+        await ctx.send("HAHA LMAO you tried robbing a broke person and you lost your disguise.")
+        return
+    else:
+      await ctx.send("I don't know anyone with that name normie. Btw you lost ur disguise because you tripping.")
+      return
+  else:
+    await ctx.send("SMH you need to buy a disguise to rob people genius.")
+    
+
+
 
 
 #________STORE ITEMS_________
+
 store = {"disguise":1000,"doge_statue":10000,"starship_ticket":100000}
 
 #Marketplace feature
@@ -220,6 +291,11 @@ async def buy(ctx, item: str):
   else: 
     await ctx.send("This item isn't for sale")
 
+#Random Memes
+@bot.command()
+async def plsmch(ctx):
+  await ctx.send("PLSMCH stop.")
+  await ctx.send(file=discord.File('reactions/plsmch.gif'))
 
 #Keeps the bot active
 
